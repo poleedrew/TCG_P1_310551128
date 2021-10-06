@@ -47,11 +47,11 @@ public:
 
 	data info() const { return attr; }
 	data info(data dat) { data old = attr; attr = dat; return old; }
-	data fib(data tile) { 
-		data fib[] = {0, 1, 2, 3, 5, 8, 13, 21,
+	static int fib(data idx) { 
+		int fib[] = {0, 1, 2, 3, 5, 8, 13, 21,
 		34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584,
 		4181, 6765, 10946, 17711, 28657,46368, 75025};
-		return fib[tile];
+		return fib[idx];
 	}
 public:
 	bool operator ==(const board& b) const { return tile == b.tile; }
@@ -99,9 +99,10 @@ public:
 				if (tile == 0) continue;
 				row[c] = 0;
 				if (hold) {
-					if (tile == hold) {
+					if (std::abs(tile - hold) == 1 || (hold == 1 && tile == 1)) {
+						tile = std::max(tile, hold) + 1;
 						row[top++] = ++tile;
-						score += (1 << tile);
+						score += fib(tile);
 						hold = 0;
 					} else {
 						row[top++] = hold;
@@ -178,7 +179,7 @@ public:
 		out << "+------------------------+" << std::endl;
 		for (auto& row : b.tile) {
 			out << "|" << std::dec;
-			for (auto t : row) out << std::setw(6) << ((1 << t) & -2u);
+			for (auto t : row) out << std::setw(6) << fib(t);
 			out << "|" << std::endl;
 		}
 		out << "+------------------------+" << std::endl;
