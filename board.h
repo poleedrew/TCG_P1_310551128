@@ -101,7 +101,7 @@ public:
 				if (hold) {
 					if (std::abs(tile - hold) == 1 || (hold == 1 && tile == 1)) {
 						tile = std::max(tile, hold) + 1;
-						row[top++] = ++tile;
+						row[top++] = tile;
 						score += fib(tile);
 						hold = 0;
 					} else {
