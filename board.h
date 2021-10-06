@@ -47,7 +47,12 @@ public:
 
 	data info() const { return attr; }
 	data info(data dat) { data old = attr; attr = dat; return old; }
-
+	data fib(data tile) { 
+		data fib[] = {0, 1, 2, 3, 5, 8, 13, 21,
+		34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584,
+		4181, 6765, 10946, 17711, 28657,46368, 75025};
+		return fib[tile];
+	}
 public:
 	bool operator ==(const board& b) const { return tile == b.tile; }
 	bool operator < (const board& b) const { return tile <  b.tile; }
