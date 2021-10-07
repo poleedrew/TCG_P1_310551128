@@ -96,20 +96,35 @@ private:
  * dummy player
  * select a legal action randomly
  */
+
 class player : public random_agent {
 public:
-	player(const std::string& args = "") : random_agent("name=dummy role=player " + args),
-		opcode({ 0, 1, 2, 3 }) {}
+	player(const std::string& args = "") : random_agent("name=test role=play " + args),
+		opcode({0, 1, 2, 3 }) {action_op = args;}
 
 	virtual action take_action(const board& before) {
 		std::shuffle(opcode.begin(), opcode.end(), engine);
-		for (int op : opcode) {
+		if(action_op == "greedy"){
+			board::reward value = 0;
+			int idx = 0;
+			for (int op : opcode) {
+				board::reward reward = board(before).slide(op);
+				if( reward >= value){
+					value = reward;
+					idx = op;
+				}
+			}
+			return action::slide(idx);
+		}
+		else{
+			for (int op : opcode) {
 			board::reward reward = board(before).slide(op);
 			if (reward != -1) return action::slide(op);
 		}
 		return action();
-	}
-
+		}
+	}	
 private:
 	std::array<int, 4> opcode;
+	std::string action_op;
 };
