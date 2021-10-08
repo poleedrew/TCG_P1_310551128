@@ -116,6 +116,22 @@ public:
 			}
 			return action::slide(idx);
 		}
+		else if(action_op == "heuristic"){
+			board::reward value = 0;
+			int idx = 0;
+			for(int op1 : opcode) {
+				board origin = board(before);
+				board::reward reward1 = origin.slide(op1);
+				for( int op2 : opcode){
+					board::reward reward2 = reward1 + origin.slide(op2);
+					if(value <= reward2){
+						value = reward2;
+						idx = op1;
+					}
+				}
+			}
+			return action::slide(idx);
+		}
 		else{
 			for (int op : opcode) {
 			board::reward reward = board(before).slide(op);
