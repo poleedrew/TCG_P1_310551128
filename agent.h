@@ -109,6 +109,7 @@ public:
 			int idx = 0;
 			for (int op : opcode) {
 				board::reward reward = board(before).slide(op);
+				if (reward == -1) continue;
 				if( reward >= value){
 					value = reward;
 					idx = op;
@@ -119,12 +120,15 @@ public:
 		else if(action_op == "heuristic"){
 			board::reward value = 0;
 			int idx = 0;
+			
 			for(int op1 : opcode) {
 				board origin = board(before);
 				board::reward reward1 = origin.slide(op1);
+				if (reward1 == -1) continue;
 				for( int op2 : opcode){
-					board::reward reward2 = reward1 + origin.slide(op2);
-					if(value <= reward2){
+					board::reward reward2 = origin.slide(op2);
+					if (reward2 == -1) continue;
+					if(reward1 + reward2 >= value){
 						value = reward2;
 						idx = op1;
 					}
