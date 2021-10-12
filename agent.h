@@ -117,7 +117,7 @@ public:
 			}
 			return action::slide(idx);
 		}
-		else if(action_op == "heuristic"){
+		else if(action_op == "tree_search"){
 			board::reward value = 0;
 			int idx = 0;
 			
@@ -135,6 +135,39 @@ public:
 				}
 			}
 			return action::slide(idx);
+		}
+		else if(action_op == "heuristic"){
+			struct op{
+				int code;
+				board after;
+				int val;
+				op(const board& b, int o):code(o), after(b), val(after.slide(code)){}
+				bool operator <(const op& b) const{return val < b.val;}
+			} op[] = {{before, 0}, {before, 1}, {before, 2}, {before, 3}};
+			
+			for(int i:{0,1,2,3}){
+				if(op[i].val == -1)continue;
+				int max_loc = 0;
+				int num_space = 0;
+				for (int j:{0, 1, 2, 3}){
+					board origin = op[i].after;
+					if(origin.slide(j) == -1)continue;
+					for(int t = 0;t < 16; t++)
+						if(origin(t) == 0)
+							num_space += 1;
+					
+					op[i].val += num_space * 5;
+				}
+				for(int t = 0; t<16;t++){
+					if(op[i].after(t) > op[i].after(max_loc))
+						max_loc = t;
+				}
+				if(max_loc == 0 || max_loc == 3 || max_loc == 12 || max_loc == 15)
+					op[i].val += op[i].after(max_loc);
+				
+			}
+			std::sort(op, op+4);
+			return action::slide(op[3].code);
 		}
 		else{
 			for (int op : opcode) {
