@@ -144,19 +144,31 @@ public:
 				op(const board& b, int o):code(o), after(b), val(after.slide(code)){}
 				bool operator <(const op& b) const{return val < b.val;}
 			} op[] = {{before, 0}, {before, 1}, {before, 2}, {before, 3}};
-			
+			int mv = 0;
+			for(int i=0;i<16;i++) if(before(i) > before(mv))mv = i;
 			for(int i:{0,1,2,3}){
 				if(op[i].val == -1)continue;
+				
 				int max_loc = 0;
 				int num_space = 0;
 				for (int j:{0, 1, 2, 3}){
+					board rotate_board = op[i].after;
+					rotate_board.rotate(j);
+					int id[] = {0, 4, 8, 12};
+					for(int t = 0; t<4;t++){
+						if( abs(rotate_board(id[t]) - rotate_board(id[t]+1)) == 1  || (rotate_board(id[t]) == 1 && rotate_board(id[t]+1) == 1)) op[i].val += 3;
+						if( abs(rotate_board(id[t]+1) - rotate_board(id[t]+2)) == 1 || (rotate_board(id[t]+1) == 1 && rotate_board(id[t]+2) == 1)) op[i].val += 3;
+						if( abs(rotate_board(id[t]+2) - rotate_board(id[t]+3)) == 1 || (rotate_board(id[t]+2) == 1 && rotate_board(id[t]+3) == 1)) op[i].val += 3;
+					}
 					board origin = op[i].after;
 					if(origin.slide(j) == -1)continue;
-					for(int t = 0;t < 16; t++)
+					
+					for(int t = 0;t < 16; t++){
 						if(origin(t) == 0)
 							num_space += 1;
+					}
 					
-					op[i].val += num_space * 5;
+					op[i].val += num_space * 2;
 				}
 				for(int t = 0; t<16;t++){
 					if(op[i].after(t) > op[i].after(max_loc))
@@ -164,6 +176,9 @@ public:
 				}
 				if(max_loc == 0 || max_loc == 3 || max_loc == 12 || max_loc == 15)
 					op[i].val += op[i].after(max_loc);
+				if(max_loc == mv && op[i].after(max_loc) > 6){
+					op[i].val += board::fib(op[i].after(max_loc) - 2);
+				}
 				
 			}
 			std::sort(op, op+4);
