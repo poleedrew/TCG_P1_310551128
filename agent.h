@@ -87,7 +87,7 @@ public:
 	virtual action take_action(const board& before) {
 		int best_op = -1;
 		int best_reward = -1;
-		float best_value = -10000;
+		float best_value = -std::numeric_limits<float>::max();
 		board best_after;
 		for(int op:{0, 1, 2, 3}){
 			board after = before;
