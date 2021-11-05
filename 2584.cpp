@@ -57,6 +57,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	player play(play_args);
+	// dummy_player play(play_args);
 	rndenv evil(evil_args);
 
 	while (!stat.is_finished()) {

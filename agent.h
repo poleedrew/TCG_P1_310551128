@@ -70,25 +70,110 @@ protected:
 /**
  * base agent for agents with weight tables and a learning rate
  */
-class weight_agent : public agent {
+class player : public agent {
 public:
-	weight_agent(const std::string& args = "") : agent(args), alpha(0) {
+	player(const std::string& args = "") : agent("name=dummy role=play " + args), alpha(0) {
 		if (meta.find("init") != meta.end())
 			init_weights(meta["init"]);
 		if (meta.find("load") != meta.end())
 			load_weights(meta["load"]);
 		if (meta.find("alpha") != meta.end())
-			alpha = float(meta["alpha"]);
+			alpha = float(meta["alpha"])/24;
 	}
-	virtual ~weight_agent() {
+	virtual ~player() {
 		if (meta.find("save") != meta.end())
 			save_weights(meta["save"]);
 	}
+	virtual action take_action(const board& before) {
+		int best_op = -1;
+		int best_reward = -1;
+		float best_value = -std::numeric_limits<float>::max();
+		board best_after;
+		for(int op:{0, 1, 2, 3}){
+			board after = before;
+			int reward = after.slide(op);
+			if(reward == -1)continue;
 
+			float value = estimate_value(after);
+			if(reward + value > best_value + best_reward){
+				best_op = op;
+				best_reward = reward;
+				best_value = value;
+				best_after = after;
+			}
+		}
+		if(best_op != -1){
+			history.push_back({best_reward, best_after});
+		} 
+		return action::slide(best_op);
+	}
+	
+	struct step
+	{
+		int reward;
+		board after;
+	};
+
+	virtual void open_episode(const std::string& flag = "") {
+		history.clear();
+	}
+	virtual void close_episode(const std::string& flag = "") {
+		if(history.empty()) return;
+		if(alpha == 0) return;
+		adjust_value(history[history.size() - 1].after, 0);
+		for(int t = history.size()-2; t >= 0; t--){
+			adjust_value(history[t].after, 
+			history[t+1].reward + estimate_value(history[t+1].after));
+		}
+	}
+	std::vector<step> history;
+	
+	void adjust_value(const board& after, float target){
+		float current = estimate_value(after);
+		float error = target - current;
+		float adjust = alpha * error;
+		board temp_board = after;
+		for(int j=0;j<2;j++){
+			for(int i=0;i<4;i++){
+				temp_board.rotate_right();
+				net[0][extract_feature(temp_board, 0, 1, 2, 3, 4)] += adjust;
+				net[1][extract_feature(temp_board, 4, 5, 6, 7, 8)]+= adjust;
+				net[2][extract_feature(temp_board, 0, 1, 2, 4, 5)]+= adjust;
+			}
+			temp_board.reflect_horizontal();
+		}
+	}
+	int extract_feature(const board& after, int a, int b, int c, int d, int e, int f) const {
+		return after(a) * 25 * 25 * 25 * 25 * 25 + after(b) * 25 * 25 * 25 * 25 + after(c) * 25 * 25 * 25 + after(d) * 25 * 25 + after(e) * 25 + after(f);
+	}
+
+	int extract_feature(const board& after, int a, int b, int c, int d, int e) const {
+		return after(a) * 25 * 25 * 25 * 25 + after(b)* 25 * 25 * 25 + after(c) * 25 * 25 + after(d) * 25 + after(e);
+	}
+	int extract_feature(const board& after, int a, int b, int c, int d) const {
+		return after(a) * 25 * 25 * 25 + after(b) * 25 * 25 + after(c) * 25 + after(d);
+	}
+	
+	float estimate_value(const board& after) const{
+		float value = 0;
+		board temp_board = after;
+		for(int j=0;j<2;j++){
+			for(int i=0;i<4;i++){
+				temp_board.rotate_right();
+				value += net[0][extract_feature(temp_board, 0, 1, 2, 3, 4)];
+				value += net[1][extract_feature(temp_board, 4, 5, 6, 7, 8)];
+				value += net[2][extract_feature(temp_board, 0, 1, 2, 4, 5)];
+			}
+			temp_board.reflect_horizontal();
+		}
+		
+		return value;
+	}
 protected:
 	virtual void init_weights(const std::string& info) {
-//		net.emplace_back(65536); // create an empty weight table with size 65536
-//		net.emplace_back(65536); // create an empty weight table with size 65536
+		net.emplace_back(25 * 25 * 25 * 25 * 25);
+		net.emplace_back(25 * 25 * 25 * 25 * 25);
+		net.emplace_back(25 * 25 * 25 * 25 * 25);
 	}
 	virtual void load_weights(const std::string& path) {
 		std::ifstream in(path, std::ios::in | std::ios::binary);
@@ -144,9 +229,9 @@ private:
  * select a legal action randomly
  */
 
-class player : public random_agent {
+class dummy_player : public random_agent {
 public:
-	player(const std::string& args = "") : random_agent("name=test role=play " + args),
+	dummy_player(const std::string& args = "") : random_agent("name=test role=play " + args),
 		opcode({0, 1, 2, 3 }) {action_op = args;}
 
 	virtual action take_action(const board& before) {
